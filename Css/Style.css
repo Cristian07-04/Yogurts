@@ -63,6 +63,7 @@ body {
 .app-header .marca i { color: var(--acento); }
 .app-header h1 { font-weight: 800; letter-spacing: -0.3px; }
 .app-header .marca small { color: var(--texto-suave); font-weight: 700; }
+.app-header .container { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 
 /* 3. NAVEGACIÓN POR FASES ---------------------------------------------------- */
 .nav-pills-custom {
@@ -171,6 +172,13 @@ body {
 
 /* Etiqueta del lote dentro de un pedido de cliente */
 .sabores { margin-top: 10px; }
+.unidades-persona {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+.unidades-persona i { color: var(--acento); margin-right: 4px; }
 .sabor-chip {
   display: inline-block;
   background: #f4eddf;
@@ -310,6 +318,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: 14px;
@@ -327,6 +336,9 @@ body {
 
 /* Panel de pedido en la pestaña Pedidos */
 .panel-cabecera { align-items: center; }
+.panel-cabecera .pedido-acciones { gap: 6px; }
+.lote-cuerpo { margin-top: 2px; }
+.lote-colapsado .lote-cuerpo { display: none; }
 .sin-clientes {
   margin-top: 12px;
   text-align: center;
@@ -337,6 +349,29 @@ body {
   border-radius: 12px;
   font-weight: 700;
   font-size: 0.85rem;
+}
+
+/* Agrupación por estado del pedido (Enviado al proveedor / En entrega / En recaudo) */
+.estado-seccion { margin-bottom: 22px; }
+.estado-seccion-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+.estado-seccion-titulo i { color: var(--acento); }
+.estado-contador {
+  background: var(--acento);
+  color: #fff;
+  border-radius: 999px;
+  font-weight: 800;
 }
 
 /* Seguimiento de fases al final del panel del pedido */
@@ -454,9 +489,54 @@ body {
 }
 .btn-fab:hover { color: #fff; transform: translateY(-2px); }
 
-/* 12. MEDIA QUERIES (PANTALLAS MAYORES) ------------------------------------------ */
+/* Modales: siempre caben en la pantalla y su contenido es scrolleable */
+.modal-dialog { margin: 0.5rem auto; }
+.modal-dialog-scrollable .modal-body { overflow-y: auto; }
+.modal-body { max-height: 70vh; }
+.modal-footer { flex-wrap: wrap; }
+.modal-footer .btn { flex: 1; white-space: nowrap; }
+
+/* 12. MEDIA QUERIES (DIFERENTES TAMAÑOS DE PANTALLA) --------------------------- */
+
+/* Pantallas muy pequeñas (< 400px): una sola columna financiera */
+@media (max-width: 399px) {
+  .financiero { grid-template-columns: 1fr; }
+  .app-header .container { flex-direction: column; align-items: flex-start; }
+  .app-header .container .btn { align-self: flex-end; }
+}
+
+/* Teléfonos (>= 400px): dos columnas para lo financiero */
+@media (min-width: 400px) and (max-width: 575px) {
+  .financiero { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Tablets (>= 576px): cabecera compacta, selector en 2 columnas */
+@media (min-width: 576px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .modal-body { max-height: 75vh; }
+}
+
+/* Tablets grandes / escritorio (>= 768px): 4 columnas en estadísticas y financiero */
 @media (min-width: 768px) {
   .stats-grid { grid-template-columns: repeat(4, 1fr); }
   .selector-sabores { grid-template-columns: repeat(2, 1fr); }
   .financiero { grid-template-columns: repeat(4, 1fr); }
+  .modal-dialog { margin: 1.75rem auto; }
+}
+
+/* Escritorio (>= 992px): selector de sabores en 3 columnas */
+@media (min-width: 992px) {
+  .selector-sabores { grid-template-columns: repeat(3, 1fr); }
+  .modal-body { max-height: 80vh; }
+  main.container { max-width: 1080px; }
+}
+
+/* Pantallas anchas (>= 1200px) */
+@media (min-width: 1200px) {
+  main.container { max-width: 1180px; }
+}
+
+/* Soporte para scroll en pantallas bajas */
+@media (max-height: 700px) {
+  .modal-body { max-height: 62vh; }
 }
