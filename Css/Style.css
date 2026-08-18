@@ -1,0 +1,462 @@
+/* ============================================================================
+   YogurArte · Estilos
+   Css/Style.css
+   ----------------------------------------------------------------------------
+   Paleta cálida y minimalista (crema + terracota), diseñada mobile-first.
+   Organización:
+     1. Variables y base
+     2. Cabecera
+     3. Navegación por fases
+     4. Tarjetas de estadísticas
+     5. Tarjetas de pedido / lote
+     6. Insignias de estado
+     7. Selector de sabores y reconteo
+     8. Filas de entrega y cobros, tachado
+     9. Panel de pedido (pestaña Pedidos) y seguimiento de fases
+    10. Progreso, botones y fechas de recaudo
+    11. Modal, vacío, botón flotante
+    12. Media queries (pantallas mayores)
+   ============================================================================ */
+
+/* 1. VARIABLES Y BASE ------------------------------------------------------- */
+:root {
+  --fondo: #f6f1e8;
+  --superficie: #ffffff;
+  --texto: #3d352c;
+  --texto-suave: #9a8c7c;
+  --borde: #eadfcb;
+  --acento: #d97c5a;
+  --acento-oscuro: #c26240;
+  --acento-suave: #f7e6dd;
+  --ok: #3d8f7f;
+  --ok-suave: #e0f0ec;
+  --peligro: #d64550;
+  --peligro-suave: #fbe7e9;
+  --pendiente-suave: #fdf3dc;
+  --sombra: 0 6px 20px rgba(93, 68, 45, 0.08);
+  --radio: 16px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--fondo);
+  color: var(--texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+.obligatorio { color: var(--peligro); }
+.texto-suave { color: var(--texto-suave); }
+.peque { font-size: 0.8rem; font-weight: 600; }
+.peligro { color: var(--peligro); }
+
+/* 2. CABECERA ---------------------------------------------------------------- */
+.app-header {
+  background: linear-gradient(135deg, #fffdf9, #fbf3e7);
+  border-bottom: 1px solid var(--borde);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+.app-header .marca i { color: var(--acento); }
+.app-header h1 { font-weight: 800; letter-spacing: -0.3px; }
+.app-header .marca small { color: var(--texto-suave); font-weight: 700; }
+
+/* 3. NAVEGACIÓN POR FASES ---------------------------------------------------- */
+.nav-pills-custom {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: #ece2d2;
+  border-radius: 999px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-pills-custom::-webkit-scrollbar { display: none; }
+.nav-pills-custom .nav-link {
+  flex: 1;
+  white-space: nowrap;
+  color: var(--texto-suave);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  padding: 0.55rem 0.75rem;
+  text-align: center;
+}
+.nav-pills-custom .nav-link i { margin-right: 4px; }
+.nav-pills-custom .nav-link:hover { color: var(--texto); }
+.nav-pills-custom .nav-link.active {
+  background: var(--superficie);
+  color: var(--acento-oscuro);
+  box-shadow: 0 2px 8px rgba(93, 68, 45, 0.12);
+}
+
+/* 4. TARJETAS DE ESTADÍSTICAS ------------------------------------------------ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat-card {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 14px;
+  box-shadow: var(--sombra);
+}
+.stat-card .stat-icono { color: var(--acento); font-size: 1.1rem; margin-bottom: 6px; }
+.stat-card .stat-valor {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+  word-break: break-word;
+}
+.stat-card .stat-etiqueta {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--texto-suave);
+  font-weight: 800;
+}
+.stat-card.destacado {
+  background: linear-gradient(135deg, var(--acento), var(--acento-oscuro));
+  border: none;
+  color: #fff;
+}
+.stat-card.destacado .stat-icono { color: rgba(255, 255, 255, 0.9); }
+.stat-card.destacado .stat-etiqueta { color: rgba(255, 255, 255, 0.85); }
+
+/* 5. TARJETAS DE PEDIDO / LOTE ------------------------------------------------ */
+.pedido-card,
+.lote-card,
+.lote-block {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 16px;
+  box-shadow: var(--sombra);
+}
+.pedido-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pedido-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-icono {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--borde);
+  background: #fff;
+  color: var(--texto-suave);
+}
+.btn-icono:hover {
+  color: var(--acento-oscuro);
+  border-color: var(--acento);
+  background: var(--acento-suave);
+}
+.btn-icono-peligro:hover {
+  color: var(--peligro);
+  border-color: var(--peligro);
+  background: var(--peligro-suave);
+}
+
+/* Etiqueta del lote dentro de un pedido de cliente */
+.sabores { margin-top: 10px; }
+.sabor-chip {
+  display: inline-block;
+  background: #f4eddf;
+  color: var(--texto);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.8rem;
+  margin: 2px 2px 2px 0;
+}
+.sabor-chip strong { color: var(--acento-oscuro); }
+
+.pedido-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+.pedido-meta i { margin-right: 4px; color: var(--acento); }
+
+/* Resumen compacto dentro de la tarjeta de lote */
+.lote-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+  font-weight: 700;
+  margin-top: 10px;
+}
+.lote-resumen strong { color: var(--texto); }
+
+.financiero {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  background: #faf6ef;
+  border: 1px dashed var(--borde);
+  border-radius: 12px;
+  padding: 10px;
+}
+.financiero > div { display: flex; flex-direction: column; }
+.financiero .etiqueta {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--texto-suave);
+  font-weight: 800;
+}
+.financiero strong { font-size: 1.05rem; }
+.financiero-ganancia strong { color: var(--ok); }
+
+/* 6. INSIGNIAS DE ESTADO ------------------------------------------------------ */
+.badge { font-weight: 700; }
+.estado-ok { background: var(--ok-suave); color: var(--ok); border: 1px solid #cbe5de; }
+.estado-pend { background: var(--pendiente-suave); color: #b07c1f; border: 1px solid #f0dfae; }
+.estado-proveedor { background: var(--pendiente-suave); color: #b07c1f; border: 1px solid #f0dfae; }
+.estado-entrega { background: #e7eef9; color: #3a6bb0; border: 1px solid #c9d9f2; }
+.estado-recaudo { background: #efe7f7; color: #7a4fb0; border: 1px solid #dcccf0; }
+.estado-finalizado { background: var(--ok-suave); color: var(--ok); border: 1px solid #cbe5de; }
+.estado-vencido { background: var(--peligro-suave); color: var(--peligro); border: 1px solid #f0c3c8; }
+
+/* 7. SELECTOR DE SABORES Y RECONTEO ------------------------------------------- */
+.selector-sabores { display: grid; gap: 8px; }
+.sabor-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sabor-fila.activo { border-color: var(--acento); background: var(--acento-suave); }
+.sabor-nombre { font-weight: 700; font-size: 0.95rem; }
+.stepper { display: inline-flex; align-items: center; gap: 10px; }
+.stepper-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--borde);
+  background: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--texto);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.stepper-btn:hover { border-color: var(--acento); color: var(--acento-oscuro); }
+.sabor-fila.activo .stepper-btn { border-color: var(--acento); color: var(--acento-oscuro); }
+.stepper-cantidad { min-width: 22px; text-align: center; font-weight: 800; }
+
+.reconteo {
+  border: 1.5px dashed var(--borde);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fdfaf4;
+  margin-top: 12px;
+}
+.reconteo-cabecera { font-size: 1rem; }
+.reconteo-cabecera strong { color: var(--acento-oscuro); }
+.reconteo-detalle { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 0.8rem; }
+.reconteo-chip {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.reconteo-finance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  font-weight: 700;
+}
+.reconteo-finance .ganancia { color: var(--ok); }
+
+.mensaje-error {
+  display: none;
+  color: var(--peligro);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* 9. FILAS DE ENTREGA Y COBROS, TACHADO ---------------------------------------- */
+.fila-entrega,
+.fila-cobro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: var(--sombra);
+}
+.fila-info { display: flex; flex-direction: column; line-height: 1.3; }
+.fila-info small { color: var(--texto-suave); font-weight: 600; }
+.fila-entrega.entregado,
+.fila-cobro.pagado { background: var(--ok-suave); border-color: #cbe5de; }
+.fila-cobro.pendiente { border-left: 4px solid var(--peligro); }
+
+/* "Tachar" a las personas ya entregadas */
+.tachado { text-decoration: line-through; color: var(--texto-suave); }
+
+/* Panel de pedido en la pestaña Pedidos */
+.panel-cabecera { align-items: center; }
+.sin-clientes {
+  margin-top: 12px;
+  text-align: center;
+  padding: 22px 12px;
+  color: var(--texto-suave);
+  background: #faf6ef;
+  border: 1px dashed var(--borde);
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* Seguimiento de fases al final del panel del pedido */
+.fases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--borde);
+}
+.fase {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--texto-suave);
+  background: #f4eddf;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.fase i { margin-right: 3px; }
+.fase.hecha { color: var(--ok); }
+.fase.activa { background: var(--acento); color: #fff; }
+
+/* 10. PROGRESO, BOTONES Y FECHAS DE RECAUDO ------------------------------------- */
+.progreso-box {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 16px;
+  box-shadow: var(--sombra);
+}
+.progreso-box h2 { font-size: 1rem; font-weight: 800; margin: 0; }
+.progreso-num { font-size: 0.8rem; color: var(--texto-suave); font-weight: 700; text-align: right; }
+.progress { height: 10px; background: #eee4d2; }
+.progress-bar { background: var(--ok); font-size: 0.65rem; font-weight: 800; }
+
+.btn-primario {
+  background: linear-gradient(135deg, var(--acento), var(--acento-oscuro));
+  border: none;
+  color: #fff;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+}
+.btn-primario:hover { color: #fff; background: var(--acento-oscuro); }
+
+.btn-ok {
+  background: var(--ok-suave);
+  color: var(--ok);
+  border: 1px solid #cbe5de;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.btn-ok:hover { background: #cde7df; color: var(--ok); }
+.btn-outline {
+  border: 1px solid var(--borde);
+  background: #fff;
+  color: var(--texto);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.btn-outline:hover { border-color: var(--acento); color: var(--acento-oscuro); }
+
+/* Fecha límite de recaudo por tanda */
+.recaudo-fecha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  background: #faf6ef;
+  border: 1px dashed var(--borde);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+.recaudo-fecha i { color: var(--acento); }
+.recaudo-fecha.vencida { background: var(--peligro-suave); border-color: #eec3c7; color: var(--peligro); }
+.recaudo-fecha.vencida i { color: var(--peligro); }
+
+/* 11. MODAL, VACÍO Y BOTÓN FLOTANTE --------------------------------------------- */
+.modal-content { border: none; border-radius: 20px; }
+.modal-header { border-bottom-color: var(--borde); }
+.modal-title { font-weight: 800; }
+
+.vacio {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--texto-suave);
+  background: #fff;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+}
+.vacio i { font-size: 2.2rem; display: block; margin-bottom: 8px; color: var(--borde); }
+.vacio p { margin: 0; color: var(--texto); }
+.vacio small { color: var(--texto-suave); }
+
+.btn-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1030;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--acento), var(--acento-oscuro));
+  color: #fff;
+  border: none;
+  font-size: 1.5rem;
+  box-shadow: 0 8px 20px rgba(194, 98, 64, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+.btn-fab:hover { color: #fff; transform: translateY(-2px); }
+
+/* 12. MEDIA QUERIES (PANTALLAS MAYORES) ------------------------------------------ */
+@media (min-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .selector-sabores { grid-template-columns: repeat(2, 1fr); }
+  .financiero { grid-template-columns: repeat(4, 1fr); }
+}

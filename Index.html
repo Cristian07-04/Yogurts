@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gestión de pedidos, entregas y cobros de yogur artesanal.">
+  <title>YogurArte · Pedidos de yogur artesanal</title>
+
+  <!-- Tipografía -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 + iconos -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="Css/Style.css">
+</head>
+<body>
+
+  <!-- Cabecera -->
+  <header class="app-header">
+    <div class="container">
+      <div class="marca d-flex align-items-center gap-3 py-3">
+        <i class="bi bi-cup-straw fs-2"></i>
+        <div>
+          <h1 class="h5 mb-0">YogurArte</h1>
+          <small>Proveedor · Pedidos · Entregas · Recaudo</small>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container py-3 pb-5">
+
+    <!-- Navegación por fases -->
+    <ul class="nav nav-pills nav-pills-custom mb-3" id="fases-tab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-proveedor-b" data-bs-toggle="pill" data-bs-target="#fase-proveedor" type="button" role="tab" aria-controls="fase-proveedor">
+          <i class="bi bi-truck"></i> Proveedor
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-pedidos-b" data-bs-toggle="pill" data-bs-target="#fase-pedidos" type="button" role="tab" aria-controls="fase-pedidos">
+          <i class="bi bi-box-seam"></i> Pedidos
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-entrega-b" data-bs-toggle="pill" data-bs-target="#fase-entrega" type="button" role="tab" aria-controls="fase-entrega">
+          <i class="bi bi-bicycle"></i> Entrega
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-recaudo-b" data-bs-toggle="pill" data-bs-target="#fase-recaudo" type="button" role="tab" aria-controls="fase-recaudo">
+          <i class="bi bi-cash-coin"></i> Recaudo
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+
+      <!-- ===== FASE 1 · PROVEEDOR: pedido de compra con fecha, cantidades y estados ===== -->
+      <div class="tab-pane fade" id="fase-proveedor" role="tabpanel" aria-labelledby="tab-proveedor-b">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 mb-0">Pedidos al proveedor</h2>
+          <button class="btn btn-primario btn-sm" data-accion="nuevo-lote">
+            <i class="bi bi-plus-lg"></i> Nuevo pedido
+          </button>
+        </div>
+        <p class="texto-suave peque mb-2">
+          <i class="bi bi-info-circle"></i> Creas cada pedido con la fecha de llegada de los yogures, agregas los
+          clientes y sus sabores, y el pedido avanza solo: Enviado al proveedor → En entrega → En recaudo → Finalizado.
+        </p>
+        <div id="listaLotes" class="d-grid gap-3"></div>
+      </div>
+
+      <!-- ===== FASE 2 · PEDIDOS: listado de clientes con detalle y resumen financiero ===== -->
+      <div class="tab-pane fade show active" id="fase-pedidos" role="tabpanel" aria-labelledby="tab-pedidos-b">
+        <div class="stats-grid mb-3">
+          <div class="stat-card">
+            <div class="stat-icono"><i class="bi bi-people"></i></div>
+            <div class="stat-valor" id="statPedidos">0</div>
+            <div class="stat-etiqueta">Pedidos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icono"><i class="bi bi-basket"></i></div>
+            <div class="stat-valor" id="statUnidades">0</div>
+            <div class="stat-etiqueta">Yogures</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icono"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="stat-valor" id="statIngresos">$0</div>
+            <div class="stat-etiqueta">Ingresos posibles</div>
+          </div>
+          <div class="stat-card destacado">
+            <div class="stat-icono"><i class="bi bi-cash-stack"></i></div>
+            <div class="stat-valor" id="statGanancia">$0</div>
+            <div class="stat-etiqueta">Ganancia potencial</div>
+          </div>
+        </div>
+
+        <h2 class="h6 mb-2">Pedidos y personas</h2>
+        <div id="listaPedidos" class="d-grid gap-3"></div>
+      </div>
+
+      <!-- ===== FASE 3 · ENTREGA: tachar personas entregadas + progreso por tanda ===== -->
+      <div class="tab-pane fade" id="fase-entrega" role="tabpanel" aria-labelledby="tab-entrega-b">
+        <div id="listaEntrega" class="d-grid gap-3"></div>
+      </div>
+
+      <!-- ===== FASE 4 · RECAUDO: marcar pagos con fecha límite única por tanda ===== -->
+      <div class="tab-pane fade" id="fase-recaudo" role="tabpanel" aria-labelledby="tab-recaudo-b">
+        <div class="stats-grid mb-3">
+          <div class="stat-card">
+            <div class="stat-icono"><i class="bi bi-check2-circle"></i></div>
+            <div class="stat-valor" id="cobroRecaudado">$0</div>
+            <div class="stat-etiqueta">Recaudado</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icono"><i class="bi bi-clock-history"></i></div>
+            <div class="stat-valor" id="cobroPendiente">$0</div>
+            <div class="stat-etiqueta">Pendiente de cobro</div>
+          </div>
+        </div>
+        <div id="listaCobros" class="d-grid gap-3"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Botón flotante para nuevo pedido de cliente (visible en cualquier fase) -->
+  <button class="btn-fab" data-accion="nuevo" aria-label="Agregar persona" title="Agregar persona a un pedido">
+    <i class="bi bi-plus-lg"></i>
+  </button>
+
+  <!-- ===== Modal: pedido al proveedor (compra) ===== -->
+  <div class="modal fade" id="modalLote" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="formLote" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title" id="tituloModalLote">Nuevo pedido al proveedor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="loteId">
+
+            <div class="row g-2 mb-3">
+              <div class="col-12 col-md-6">
+                <label for="fechaRecepcion" class="form-label">Fecha de llegada de los yogures <span class="obligatorio">*</span></label>
+                <input type="date" class="form-control" id="fechaRecepcion" required>
+                <div class="invalid-feedback">La fecha de llegada es obligatoria.</div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="fechaLimiteCobro" class="form-label">Fecha límite de recaudo</label>
+                <input type="date" class="form-control" id="fechaLimiteCobro">
+                <div class="invalid-feedback" id="errorLimiteLote">No puede ser anterior a la fecha de llegada.</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primario" id="btnGuardarLote">Guardar pedido</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal: pedido de cliente ===== -->
+  <div class="modal fade" id="modalPedido" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="formPedido" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title" id="tituloModal">Nuevo pedido de cliente</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="pedidoId">
+
+            <div class="mb-3">
+              <label for="loteSelect" class="form-label">Tanda / pedido al proveedor <span class="obligatorio">*</span></label>
+              <select class="form-select" id="loteSelect" required></select>
+              <div class="invalid-feedback">Selecciona la tanda a la que pertenece este pedido.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="nombre" class="form-label">Nombre de la persona <span class="obligatorio">*</span></label>
+              <input type="text" class="form-control" id="nombre" placeholder="Ej. Doña Rosalba" autocomplete="off" required>
+              <div class="invalid-feedback">El nombre es obligatorio.</div>
+            </div>
+
+            <label class="form-label mb-2">Sabores <span class="obligatorio">*</span></label>
+            <div class="selector-sabores" id="selectorSabores"></div>
+            <div class="mensaje-error" id="errorSabores">Debes elegir al menos un sabor.</div>
+
+            <!-- Reconteo del pedido en tiempo real -->
+            <div class="reconteo" id="reconteo"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primario" id="btnGuardar">Guardar pedido</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS y lógica de la aplicación -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="Js/Script.js"></script>
+</body>
+</html>
