@@ -53,6 +53,7 @@ let lotes = [];             // pedidos al proveedor
 let pedidos = [];           // pedidos de clientes
 let loteEnEdicion = null;   // id del lote en edición (null = nuevo)
 let pedidoEnEdicion = null; // id del pedido de cliente en edición (null = nuevo)
+const lotesColapsados = new Set(); // ids de pedidos cerrados en la pestaña Pedidos
 
 // Lee lotes y pedidos desde localStorage
 function cargarDatos() {
@@ -68,13 +69,44 @@ function cargarDatos() {
     console.warn('No se pudieron cargar los pedidos:', error);
     pedidos = [];
   }
+  normalizarDatos();
   migrarDesdeV1();
+}
+
+// Corrige lotes/pedidos con datos viejos o incompletos para que siempre se rendericen
+function normalizarDatos() {
+  if (!Array.isArray(lotes)) lotes = [];
+  if (!Array.isArray(pedidos)) pedidos = [];
+  lotes.forEach((l) => {
+    if (!ESTADOS_LOTE[l.estado]) l.estado = 'proveedor';
+    if (!l.numero) l.numero = 1;
+    if (!l.fechaRecepcion) l.fechaRecepcion = hoyISO();
+  });
+  pedidos.forEach((p) => {
+    if (!p.sabores) p.sabores = {};
+    if (typeof p.entregado !== 'boolean') p.entregado = !!p.entregado;
+    if (typeof p.pagado !== 'boolean') p.pagado = !!p.pagado;
+  });
 }
 
 // Persiste lotes y pedidos en localStorage
 function guardarDatos() {
   localStorage.setItem(KEY_LOTES, JSON.stringify(lotes));
   localStorage.setItem(KEY_PEDIDOS, JSON.stringify(pedidos));
+}
+
+// Borra todos los registros y vuelve a empezar desde cero
+function resetearDatos() {
+  const mensaje = '¿Restablecer todos los registros?\n\nSe eliminarán TODOS los pedidos al proveedor y todos los pedidos de clientes. Esta acción no se puede deshacer.';
+  if (!confirm(mensaje)) return;
+  localStorage.removeItem(KEY_LOTES);
+  localStorage.removeItem(KEY_PEDIDOS);
+  localStorage.removeItem(KEY_LEGACY);
+  lotes = [];
+  pedidos = [];
+  loteEnEdicion = null;
+  pedidoEnEdicion = null;
+  renderTodo();
 }
 
 // Migra los datos de la versión anterior (pedidos sueltos) a un primer lote
@@ -420,6 +452,7 @@ function guardarLote(e) {
   } finally {
     bootstrap.Modal.getInstance('#modalLote').hide();
   }
+  mostrarPestanaPedidos();
 }
 
 // Elimina un lote y sus pedidos de clientes
@@ -452,9 +485,12 @@ function opcionesLoteSelect() {
   if (!lotes.length) {
     return '<option value="" selected>Crea primero un pedido al proveedor</option>';
   }
-  return lotes.map((l) => `
-    <option value="${l.id}">${etiquetaLote(l)} · Recepción ${fechaLegible(l.fechaRecepcion)} · ${ESTADOS_LOTE[l.estado].etiqueta}</option>
-  `).join('');
+  return lotes.map((l) => {
+    const meta = ESTADOS_LOTE[l.estado] || ESTADOS_LOTE.proveedor;
+    return `
+      <option value="${l.id}">${etiquetaLote(l)} · Recepción ${fechaLegible(l.fechaRecepcion)} · ${meta.etiqueta}</option>
+    `;
+  }).join('');
 }
 
 // Abre el formulario de pedido de cliente en modo "nuevo".
@@ -542,6 +578,7 @@ function guardarPedido(e) {
   } finally {
     bootstrap.Modal.getInstance('#modalPedido').hide();
   }
+  mostrarPestanaPedidos();
 }
 
 // Elimina un pedido de cliente (con confirmación)
@@ -704,8 +741,9 @@ function fasesHTML(lote) {
     </div>`;
 }
 
-// FASE 2 · Pedidos: un panel por pedido al proveedor. Dentro de cada panel se
-// registran las personas con sus yogures y al final se ve el estado del pedido.
+// FASE 2 · Pedidos: agrupados por estado (Enviado al proveedor / En entrega / En recaudo /
+// Finalizado). Dentro de cada grupo un panel por pedido al proveedor, con las personas
+// y sus yogures, y al final el seguimiento de fases del pedido.
 function renderPedidos() {
   const r = resumenGeneral();
   $('#statPedidos').textContent = r.pedidos;
@@ -721,60 +759,153 @@ function renderPedidos() {
   }
 
   const orden = ordenLotesPorLlegada();
-  cont.innerHTML = orden.map((l) => {
-    const t = totalesLote(l);
-    const clientes = pedidosDeLote(l.id).slice().sort((a, b) => (b.creadoEn || 0) - (a.creadoEn || 0));
 
-    const filas = clientes.map((p) => {
-      const tp = totalesPedido(p);
+  // Un bloque (sección) por cada estado en el orden del flujo
+  const bloques = ORDEN_ESTADOS.map((estado) => {
+    const meta = ESTADOS_LOTE[estado];
+    const lotesEstado = orden.filter((l) => (ESTADOS_LOTE[l.estado] ? l.estado : 'proveedor') === estado);
+    if (!lotesEstado.length) return '';
+
+    const paneles = lotesEstado.map((l) => {
+      const t = totalesLote(l);
+      const colapsado = lotesColapsados.has(l.id);
+      const clientes = pedidosDeLote(l.id).slice().sort((a, b) => (b.creadoEn || 0) - (a.creadoEn || 0));
+
+      const filas = clientes.map((p) => {
+        const tp = totalesPedido(p);
+        return `
+          <article class="pedido-card">
+            <div class="pedido-cabecera">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h3 class="h6 mb-0">${escaparHTML(p.nombre)}</h3>
+                ${estadoEntrega(p)} ${estadoPago(p)}
+              </div>
+              <div class="pedido-acciones">
+                <button type="button" class="btn btn-icono" data-accion="editar" data-id="${p.id}" title="Editar" aria-label="Editar pedido">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="btn btn-icono btn-icono-peligro" data-accion="eliminar" data-id="${p.id}" title="Eliminar" aria-label="Eliminar pedido">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="sabores">${listaSaboresHTML(p.sabores)}</div>
+            <div class="unidades-persona"><i class="bi bi-basket"></i> ${tp.unidades} ${tp.unidades === 1 ? 'yogur' : 'yogures'}</div>
+          </article>`;
+      }).join('');
+
       return `
-        <article class="pedido-card">
-          <div class="pedido-cabecera">
+        <section class="lote-block ${colapsado ? 'lote-colapsado' : ''}">
+          <div class="pedido-cabecera panel-cabecera">
             <div class="d-flex align-items-center gap-2 flex-wrap">
-              <h3 class="h6 mb-0">${escaparHTML(p.nombre)}</h3>
-              ${estadoEntrega(p)} ${estadoPago(p)}
+              <h2 class="h6 mb-0">Pedido ${etiquetaLote(l)}</h2>
+              ${badgeEstadoLote(l)}
             </div>
             <div class="pedido-acciones">
-              <button type="button" class="btn btn-icono" data-accion="editar" data-id="${p.id}" title="Editar" aria-label="Editar pedido">
-                <i class="bi bi-pencil"></i>
+              <button type="button" class="btn btn-icono" data-accion="exportar-pedido" data-id="${l.id}" title="Exportar archivo .txt" aria-label="Exportar conteo del pedido">
+                <i class="bi bi-file-earmark-arrow-down"></i>
               </button>
-              <button type="button" class="btn btn-icono btn-icono-peligro" data-accion="eliminar" data-id="${p.id}" title="Eliminar" aria-label="Eliminar pedido">
-                <i class="bi bi-trash"></i>
+              <button type="button" class="btn btn-icono" data-accion="alternar-lote" data-id="${l.id}" title="${colapsado ? 'Abrir pedido' : 'Cerrar pedido'}" aria-label="${colapsado ? 'Abrir pedido' : 'Cerrar pedido'}">
+                <i class="bi ${colapsado ? 'bi-chevron-down' : 'bi-chevron-up'}"></i>
+              </button>
+              <button type="button" class="btn btn-primario btn-sm" data-accion="nuevo" data-id="${l.id}">
+                <i class="bi bi-person-plus"></i> Agregar persona
               </button>
             </div>
           </div>
-          <div class="sabores">${listaSaboresHTML(p.sabores)}</div>
-          <div class="financiero">
-            <div><span class="etiqueta">Unidades</span><strong>${tp.unidades}</strong></div>
-            <div><span class="etiqueta">Inversión</span><strong>${formatearCOP(tp.inversion)}</strong></div>
-            <div><span class="etiqueta">Ingresos</span><strong>${formatearCOP(tp.ingresos)}</strong></div>
-            <div class="financiero-ganancia"><span class="etiqueta">Ganancia</span><strong>${formatearCOP(tp.ganancia)}</strong></div>
+          <div class="lote-cuerpo ${colapsado ? 'd-none' : ''}">
+            <div class="pedido-meta">
+              <span><i class="bi bi-box-seam"></i> Llegada: ${fechaLegible(l.fechaRecepcion)}</span>
+              ${l.fechaLimiteCobro ? `<span><i class="bi bi-cash-stack"></i> Límite recaudo: ${fechaLegible(l.fechaLimiteCobro)}</span>` : ''}
+              <span><i class="bi bi-people"></i> Personas: ${t.pedidosLote} · Yogures: ${t.unidadesClientes}</span>
+            </div>
+            ${clientes.length
+              ? `<div class="d-grid gap-3 mt-3">${filas}</div>`
+              : '<div class="sin-clientes">Aún no hay personas en este pedido. Usa "Agregar persona".</div>'}
+            <div class="financiero">
+              <div><span class="etiqueta">Unidades</span><strong>${t.unidadesClientes}</strong></div>
+              <div><span class="etiqueta">Inversión</span><strong>${formatearCOP(t.costo)}</strong></div>
+              <div><span class="etiqueta">Ingresos</span><strong>${formatearCOP(t.ingresos)}</strong></div>
+              <div class="financiero-ganancia"><span class="etiqueta">Ganancia</span><strong>${formatearCOP(t.ganancia)}</strong></div>
+            </div>
+            ${fasesHTML(l)}
           </div>
-        </article>`;
+        </section>`;
     }).join('');
 
     return `
-      <section class="lote-block">
-        <div class="pedido-cabecera panel-cabecera">
-          <div class="d-flex align-items-center gap-2 flex-wrap">
-            <h2 class="h6 mb-0">Pedido ${etiquetaLote(l)}</h2>
-            ${badgeEstadoLote(l)}
-          </div>
-          <button type="button" class="btn btn-primario btn-sm" data-accion="nuevo" data-id="${l.id}">
-            <i class="bi bi-person-plus"></i> Agregar persona
-          </button>
+      <section class="estado-seccion">
+        <div class="estado-seccion-titulo">
+          <i class="bi ${meta.icono}"></i>
+          <h2 class="h6 mb-0">${meta.etiqueta}</h2>
+          <span class="badge estado-contador">${lotesEstado.length}</span>
         </div>
-        <div class="pedido-meta">
-          <span><i class="bi bi-box-seam"></i> Llegada: ${fechaLegible(l.fechaRecepcion)}</span>
-          ${l.fechaLimiteCobro ? `<span><i class="bi bi-cash-stack"></i> Límite recaudo: ${fechaLegible(l.fechaLimiteCobro)}</span>` : ''}
-          <span><i class="bi bi-people"></i> Personas: ${t.pedidosLote} · Yogures: ${t.unidadesClientes}</span>
-        </div>
-        ${clientes.length
-          ? `<div class="d-grid gap-3 mt-3">${filas}</div>`
-          : '<div class="sin-clientes">Aún no hay personas en este pedido. Usa "Agregar persona".</div>'}
-        ${fasesHTML(l)}
+        <div class="d-grid gap-3">${paneles}</div>
       </section>`;
   }).join('');
+
+  cont.innerHTML = bloques;
+}
+
+// Abre o cierra (colapsa) el detalle de un pedido en la pestaña Pedidos
+function alternarColapsoLote(id) {
+  if (lotesColapsados.has(id)) lotesColapsados.delete(id);
+  else lotesColapsados.add(id);
+  renderPedidos();
+}
+
+// Exporta el conteo de un pedido a un archivo .txt descargable
+function exportarPedidoTxt(id) {
+  const lote = lotePorId(id);
+  if (!lote) return;
+  const t = totalesLote(lote);
+  const lista = pedidosDeLote(lote.id);
+  const sabores = agregarSabores(lista);
+
+  const lineas = [
+    `CONTEO DE YOGURES - PEDIDO ${etiquetaLote(lote)}`,
+    '',
+    `Fecha de llegada: ${fechaLegible(lote.fechaRecepcion)}`,
+    `Fecha límite de recaudo: ${lote.fechaLimiteCobro ? fechaLegible(lote.fechaLimiteCobro) : 'Sin definir'}`,
+    `Estado: ${ESTADOS_LOTE[lote.estado] ? ESTADOS_LOTE[lote.estado].etiqueta : ''}`,
+    `Personas: ${t.pedidosLote}`,
+    '',
+    `TOTAL DE YOGURES: ${t.comprados}`,
+    `INVERSIÓN (pago al proveedor): ${formatearCOP(t.costo)}`,
+    `INGRESOS: ${formatearCOP(t.ingresos)}`,
+    `GANANCIA: ${formatearCOP(t.ganancia)}`,
+    '',
+    'SABORES Y CANTIDADES:',
+  ];
+
+  Object.entries(sabores)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([sabor, cantidad]) => {
+      lineas.push(`- ${sabor}: ${cantidad}`);
+    });
+
+  if (!Object.keys(sabores).length) lineas.push('- Sin sabores registrados');
+
+  lineas.push('');
+  lineas.push('Personas del pedido:');
+  if (lista.length) {
+    lista.forEach((p) => {
+      lineas.push(`- ${p.nombre}: ${totalUnidades(p)} yogures`);
+    });
+  } else {
+    lineas.push('- Sin personas registradas');
+  }
+
+  const contenido = lineas.join('\r\n');
+  const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement('a');
+  enlace.href = url;
+  enlace.download = `Conteo de yogures pedido ${lote.numero}.txt`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  document.body.removeChild(enlace);
+  URL.revokeObjectURL(url);
 }
 
 // FASE 3 · Entrega: progreso global + bloques por tanda para "tachar" entregas
@@ -902,12 +1033,29 @@ function renderRecaudo() {
   cont.innerHTML = resumen + bloques;
 }
 
-// Repinta todas las vistas
+// Repinta todas las vistas (aisladas: un fallo no bloquea al resto)
 function renderTodo() {
-  renderProveedor();
-  renderPedidos();
-  renderEntrega();
-  renderRecaudo();
+  const vistas = [
+    ['renderProveedor', renderProveedor],
+    ['renderPedidos', renderPedidos],
+    ['renderEntrega', renderEntrega],
+    ['renderRecaudo', renderRecaudo],
+  ];
+  vistas.forEach(([nombre, fn]) => {
+    try {
+      fn();
+    } catch (error) {
+      console.error('Error al renderizar ' + nombre + ':', error);
+    }
+  });
+}
+
+// Cambia a la pestaña de Pedidos tras guardar para que se vea el resultado al instante
+function mostrarPestanaPedidos() {
+  const pestana = document.getElementById('tab-pedidos-b');
+  if (pestana && window.bootstrap && bootstrap.Tab) {
+    bootstrap.Tab.getOrCreateInstance(pestana).show();
+  }
 }
 
 /* 10. INICIALIZACIÓN Y EVENTOS GLOBALES ------------------------------------------ */
@@ -927,6 +1075,9 @@ document.addEventListener('click', (e) => {
     case 'eliminar-lote': eliminarLote(id); break;
     case 'alternar-entrega': alternarEntrega(id); break;
     case 'alternar-pago': alternarPago(id); break;
+    case 'alternar-lote': alternarColapsoLote(id); break;
+    case 'exportar-pedido': exportarPedidoTxt(id); break;
+    case 'resetear-datos': resetearDatos(); break;
   }
 });
 
